@@ -1,0 +1,55 @@
+services:
+  # ── air_pay — обработчик криптоплатежей ─────────────────────────────────────
+  pay:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    logging:
+      driver: local
+      options:
+        max-size: 5m
+        max-file: 2
+    labels:
+      logging: loki
+      app: air
+      service: pay
+      tier: backend
+    image: pay:dev
+    container_name: pay_app
+    restart: unless-stopped
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
+
+      # ── База данных (локальный сервер на хосте) ─────────────────────────────
+      - DB_HOST=air_db:3306
+      - DB_NAME=air
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+
+      # ── ByBit конфигурация ──────────────────────────────────────────────────
+      - TESTNET=false
+      - API_KEY_FILE=/run/secrets/api_key
+      - SECRET_KEY_FILE=/run/secrets/secret_key
+
+      # ── Домен и порты смежных сервисов ───────────────────────────────────────
+      - REAL_URL=localhost
+
+      # ── Логирование ──────────────────────────────────────────────────────────
+      - LOG_LEVEL=debug
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    networks:
+      - monitoring_shared
+      - air_shared
+
+    volumes:
+      - ./secrets/api_key.txt:/run/secrets/api_key:ro
+      - ./secrets/secret_key.txt:/run/secrets/secret_key:ro
+
+networks:
+  monitoring_shared:
+    external: true
+  air_shared:
+    external: true
