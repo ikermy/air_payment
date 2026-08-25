@@ -3,8 +3,7 @@ package bybit
 import (
 	"testing"
 
-	"github.com/hirokisan/bybit/v2"
-	"github.com/ikermy/air_logger/v2/pkg/logger"
+	"github.com/ikermy/air-logger/v2/pkg/logger"
 )
 
 // TestDebugAvailableChains тестирует получение доступных сетей для USDT

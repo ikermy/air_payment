@@ -1,10 +1,10 @@
 # AiR_Payment
 
-![air_payment](air_payment_logo.png)
+![air_payment](logo.png)
 
 [🇬🇧 English version](README.md)
 
-Микросервис платформы AiR для создания и отслеживания криптовалютных платежей через Bybit.
+Микросервис платформы marusia_ai для создания и отслеживания криптовалютных платежей через Bybit.
 
 ![Версия Go](https://img.shields.io/badge/Go-1.25.8-00ADD8?logo=go)
 ![Лицензия](https://img.shields.io/badge/license-MIT-blue)

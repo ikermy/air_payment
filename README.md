@@ -1,10 +1,10 @@
 # AiR_Payment
 
-![air_payment](air_payment_logo.png)
+![air_payment](logo.png)
 
 [🇷🇺 Русская версия](README.ru.md)
 
-A microservice of the AiR platform for creating and tracking cryptocurrency payments through Bybit.
+A microservice of the marusia_ai platform for creating and tracking cryptocurrency payments through Bybit.
 
 ![Go version](https://img.shields.io/badge/Go-1.25.8-00ADD8?logo=go)
 ![License](https://img.shields.io/badge/license-MIT-blue)

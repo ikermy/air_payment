@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/ikermy/air_common/pkg/comdb"
+	"github.com/ikermy/air-common/pkg/comdb"
 )
 
 type InternalDBRepository interface {

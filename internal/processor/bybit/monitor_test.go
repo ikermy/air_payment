@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ikermy/air_common/pkg/mode"
-	"github.com/ikermy/air_logger/v2/pkg/logger"
+	"github.com/ikermy/air-common/pkg/mode"
+	"github.com/ikermy/air-logger/v2/pkg/logger"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
