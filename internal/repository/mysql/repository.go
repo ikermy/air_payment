@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ikermy/air-common/pkg/comdb"
-	"github.com/ikermy/air-common/pkg/mode"
+	"github.com/ikermy/air-common/v2/pkg/comdb"
+	"github.com/ikermy/air-common/v2/pkg/mode"
 	"github.com/ikermy/air-logger/v2/pkg/logger"
 )
 
@@ -56,31 +56,119 @@ func (nb *NullBytes) Scan(value any) error {
 	return nil
 }
 
-func (r *Implementation) GetUserTariff(ctx context.Context, userID uint32) (json.RawMessage, error) {
-	// Дочерний контекст с тайм-аутом на операцию
+func (r *Implementation) GetUserTariff(ctx context.Context, userID uint64) (json.RawMessage, error) {
 	ctx, cancel := context.WithTimeout(ctx, mode.GetSQLTimeToCancel())
 	defer cancel()
 
-	// Выполняем вызов хранимой функции
-	//var result string
-	var result []byte
-	err := r.db.Conn().QueryRowContext(ctx, "SELECT GetUserTariff(?);", userID).Scan(&result)
+	var roleID int
+	if err := r.db.Conn().QueryRowContext(ctx,
+		"SELECT RoleId FROM users WHERE Id = ?", userID).Scan(&roleID); err != nil {
+		return nil, fmt.Errorf("ошибка чтения роли пользователя: %w", err)
+	}
+
+	currencyTable := "currency"
+	if roleID == 3 {
+		currencyTable = "service_currency"
+	}
+
+	var (
+		currencyName string
+		monthCost    float64
+		discountsRaw sql.NullString
+		endDate      sql.NullTime
+	)
+	query := fmt.Sprintf(`
+		SELECT c.Name, c.MonthCost, c.Discounts, s.EndDate
+		FROM users u
+		INNER JOIN %s c ON u.currency = c.Id
+		LEFT JOIN subscriptions s ON s.UserId = u.Id
+		WHERE u.Id = ?`, currencyTable)
+	if err := r.db.Conn().QueryRowContext(ctx, query, userID).
+		Scan(&currencyName, &monthCost, &discountsRaw, &endDate); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("тариф пользователя не найден")
+		}
+		return nil, fmt.Errorf("ошибка чтения тарифа: %w", err)
+	}
+
+	var discounts any
+	if discountsRaw.Valid && discountsRaw.String != "" {
+		if err := json.Unmarshal([]byte(discountsRaw.String), &discounts); err != nil {
+			return nil, fmt.Errorf("ошибка разбора Discounts: %w", err)
+		}
+	}
+
+	billing := make([]map[string]any, 0)
+	rows, err := r.db.Conn().QueryContext(ctx, `
+		SELECT Date, Payment, Months, Discont
+		FROM billing WHERE UserId = ?
+		ORDER BY Date, Id`, userID)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка вызова хранимой функции GetUserTariff: %w", err)
+		return nil, fmt.Errorf("ошибка чтения billing: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var (
+			date     sql.NullTime
+			payment  sql.NullFloat64
+			months   sql.NullInt64
+			discount sql.NullFloat64
+		)
+		if err := rows.Scan(&date, &payment, &months, &discount); err != nil {
+			return nil, fmt.Errorf("ошибка чтения billing: %w", err)
+		}
+		item := map[string]any{
+			"Date":     nil,
+			"Payment":  nil,
+			"Months":   nil,
+			"Discount": nil,
+		}
+		if date.Valid {
+			item["Date"] = date.Time.Format("2006-01-02 15:04:05")
+		}
+		if payment.Valid {
+			item["Payment"] = payment.Float64
+		}
+		if months.Valid {
+			item["Months"] = months.Int64
+		}
+		if discount.Valid {
+			item["Discount"] = discount.Float64
+		}
+		billing = append(billing, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("ошибка чтения billing: %w", err)
+	}
+	if len(billing) == 0 {
+		// Legacy SP returns a single row of nulls for users without payments.
+		billing = append(billing, map[string]any{
+			"Date":     nil,
+			"Payment":  nil,
+			"Months":   nil,
+			"Discount": nil,
+		})
 	}
 
-	// Проверяем корректность результата
-	if len(result) == 0 {
-		return nil, fmt.Errorf("пустой результат от GetUserTariff")
+	result := map[string]any{
+		"Currency":  currencyName,
+		"MonthCost": monthCost,
+		"Discounts": discounts,
+		"EndDate":   nil,
+		"Billing":   billing,
+	}
+	if endDate.Valid {
+		result["EndDate"] = endDate.Time.Format("2006-01-02")
 	}
 
-	// Преобразуем результат в json.RawMessage
-	rawMessage := json.RawMessage(result)
-
-	return rawMessage, nil
+	data, err := json.Marshal(result)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка сериализации тарифа: %w", err)
+	}
+	return data, nil
 }
 
-func (r *Implementation) SetBillingData(ctx context.Context, userId uint32, payment float64, months uint8, discount float64) error {
+func (r *Implementation) SetBillingData(ctx context.Context, userId uint64, payment float64, months uint8, discount float64) error {
 	// Дочерний контекст с тайм-аутом на операцию
 	ctx, cancel := context.WithTimeout(ctx, mode.GetSQLTimeToCancel())
 	defer cancel()
@@ -160,7 +248,7 @@ func (r *Implementation) SetBillingData(ctx context.Context, userId uint32, paym
 }
 
 // SaveCryptoPaymentRequest сохраняет запрос на криптоплатёж через хранимую процедуру
-func (r *Implementation) SaveCryptoPaymentRequest(ctx context.Context, orderID string, userID uint32, currency, network string, amount, amountUSD float64, depositAddress, depositTag string, expiresAt int64) error {
+func (r *Implementation) SaveCryptoPaymentRequest(ctx context.Context, orderID string, userID uint64, currency, network string, amount, amountUSD float64, depositAddress, depositTag string, expiresAt int64) error {
 	// Дочерний контекст с тайм-аутом на операцию
 	ctx, cancel := context.WithTimeout(ctx, mode.GetSQLTimeToCancel())
 	defer cancel()
@@ -222,7 +310,7 @@ func (r *Implementation) GetCryptoPaymentStatus(ctx context.Context, orderID str
 
 	var (
 		orderId        string
-		userId         uint32
+		userId uint64
 		status         string
 		currency       string
 		network        string
@@ -264,7 +352,7 @@ func (r *Implementation) GetCryptoPaymentStatus(ctx context.Context, orderID str
 	// Готовим объект для JSON, приводим NULL к значениям по умолчанию
 	resp := struct {
 		OrderID        string    `json:"orderId"`
-		UserID         uint32    `json:"userId"`
+		UserID uint64    `json:"userId"`
 		Status         string    `json:"status"`
 		Currency       string    `json:"currency"`
 		Network        string    `json:"network"`
@@ -422,7 +510,7 @@ func (r *Implementation) GetPendingCryptoPayments(ctx context.Context) (json.Raw
 
 	type payment struct {
 		OrderID        string    `json:"orderId"`
-		UserID         uint32    `json:"userId"`
+		UserID uint64    `json:"userId"`
 		Status         string    `json:"status"`
 		Currency       string    `json:"currency"`
 		Network        string    `json:"network"`
@@ -566,7 +654,7 @@ func (r *Implementation) CheckIfTxHashAlreadyUsed(ctx context.Context, txHash st
 }
 
 // FindActivePaymentByAddress ищет активный платеж по адресу депозита с дополнительной диагностикой
-func (r *Implementation) FindActivePaymentByAddress(ctx context.Context, userID uint32, currency, network, address string) (string, error) {
+func (r *Implementation) FindActivePaymentByAddress(ctx context.Context, userID uint64, currency, network, address string) (string, error) {
 	// Дочерний контекст с тайм-аутом на операцию
 	ctx, cancel := context.WithTimeout(ctx, mode.GetSQLTimeToCancel())
 	defer cancel()
@@ -597,7 +685,7 @@ func (r *Implementation) FindActivePaymentByAddress(ctx context.Context, userID 
 }
 
 // GetActivePaymentsByUserAndCurrency получает все активные платежи пользователя по валюте и сети
-func (r *Implementation) GetActivePaymentsByUserAndCurrency(ctx context.Context, userID uint32, currency, network string) (json.RawMessage, error) {
+func (r *Implementation) GetActivePaymentsByUserAndCurrency(ctx context.Context, userID uint64, currency, network string) (json.RawMessage, error) {
 	// Дочерний контекст с тайм-аутом на операцию
 	ctx, cancel := context.WithTimeout(ctx, mode.GetSQLTimeToCancel())
 	defer cancel()
@@ -633,7 +721,7 @@ func (r *Implementation) GetActivePaymentsByUserAndCurrency(ctx context.Context,
 
 	type payment struct {
 		OrderID        string    `json:"orderId"`
-		UserID         uint32    `json:"userId"`
+		UserID uint64    `json:"userId"`
 		Status         string    `json:"status"`
 		Currency       string    `json:"currency"`
 		Network        string    `json:"network"`

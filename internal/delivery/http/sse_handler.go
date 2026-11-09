@@ -93,7 +93,7 @@ func (sm *SSEManager) GetActiveOrderIDs() []string {
 }
 
 // FindActiveOrderIDByAddress ищет orderID с активными SSE соединениями по адресу депозита
-func (sm *SSEManager) FindActiveOrderIDByAddress(paymentService PaymentServiceInterface, userID uint32, address string) (string, error) {
+func (sm *SSEManager) FindActiveOrderIDByAddress(paymentService PaymentServiceInterface, userID uint64, address string) (string, error) {
 	activeOrderIDs := sm.GetActiveOrderIDs()
 
 	//logger.Debug("SSE Manager: Checking %d active order IDs for matching address", len(activeOrderIDs))
@@ -316,7 +316,7 @@ func (w *Web) HandlePaymentStatusSSE(c *fiber.Ctx) error {
 	}
 
 	// Проверяем владельца платежа
-	if paymentUserID, ok := paymentStatus["userId"].(float64); !ok || uint32(paymentUserID) != userID {
+	if paymentUserID, ok := paymentStatus["userId"].(float64); !ok || uint64(paymentUserID) != userID {
 		logger.Error("SSE access denied: orderID=%s, expectedUserID=%d, actualUserID=%v",
 			orderID, userID, paymentStatus["userId"])
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{

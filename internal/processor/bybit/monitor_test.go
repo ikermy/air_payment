@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ikermy/air-common/pkg/mode"
+	"github.com/ikermy/air-common/v2/pkg/mode"
 	"github.com/ikermy/air-logger/v2/pkg/logger"
 
 	"github.com/stretchr/testify/assert"
@@ -19,18 +19,18 @@ type MockMonitorDB struct {
 	mock.Mock
 }
 
-func (m *MockMonitorDB) GetUserTariff(_ context.Context, userId uint32) (json.RawMessage, error) {
+func (m *MockMonitorDB) GetUserTariff(_ context.Context, userId uint64) (json.RawMessage, error) {
 	args := m.Called(userId)
 	return args.Get(0).(json.RawMessage), args.Error(1)
 }
 
-func (m *MockMonitorDB) SetBillingData(_ context.Context, userId uint32, payment float64, months uint8, discount float64) error {
+func (m *MockMonitorDB) SetBillingData(_ context.Context, userId uint64, payment float64, months uint8, discount float64) error {
 	args := m.Called(userId, payment, months, discount)
 	return args.Error(0)
 }
 
 // Остальные методы интерфейса DB для соблюдения интерфейса
-func (m *MockMonitorDB) SaveCryptoPaymentRequest(_ context.Context, orderID string, userID uint32, currency, network string, amount, amountUSD float64, depositAddress, depositTag string, expiresAt int64) error {
+func (m *MockMonitorDB) SaveCryptoPaymentRequest(_ context.Context, orderID string, userID uint64, currency, network string, amount, amountUSD float64, depositAddress, depositTag string, expiresAt int64) error {
 	args := m.Called(orderID, userID, currency, network, amount, amountUSD, depositAddress, depositTag, expiresAt)
 	return args.Error(0)
 }
@@ -70,12 +70,12 @@ func (m *MockMonitorDB) CheckIfTxHashAlreadyUsed(_ context.Context, txHash strin
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockMonitorDB) FindActivePaymentByAddress(_ context.Context, userID uint32, currency, network, address string) (string, error) {
+func (m *MockMonitorDB) FindActivePaymentByAddress(_ context.Context, userID uint64, currency, network, address string) (string, error) {
 	args := m.Called(userID, currency, network, address)
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockMonitorDB) GetActivePaymentsByUserAndCurrency(_ context.Context, userID uint32, currency, network string) (json.RawMessage, error) {
+func (m *MockMonitorDB) GetActivePaymentsByUserAndCurrency(_ context.Context, userID uint64, currency, network string) (json.RawMessage, error) {
 	args := m.Called(userID, currency, network)
 	return args.Get(0).(json.RawMessage), args.Error(1)
 }

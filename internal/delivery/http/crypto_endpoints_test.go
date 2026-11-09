@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,7 +18,7 @@ type MockDB struct {
 	mock.Mock
 }
 
-func (m *MockDB) GetUserTariff(_ context.Context, userID uint32) (json.RawMessage, error) {
+func (m *MockDB) GetUserTariff(_ context.Context, userID uint64) (json.RawMessage, error) {
 	args := m.Called(userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -62,7 +63,7 @@ func (s *TestablePaymentService) CalculatePayment(string, string, float64) (*byb
 	return nil, errors.New("not implemented in test")
 }
 
-func (s *TestablePaymentService) CreatePaymentRequest(uint32, string, string, float64) (*bybit2.PaymentRequest, *bybit2.DepositAddress, error) {
+func (s *TestablePaymentService) CreatePaymentRequest(uint64, string, string, float64) (*bybit2.PaymentRequest, *bybit2.DepositAddress, error) {
 	return nil, nil, errors.New("not implemented in test")
 }
 
@@ -87,10 +88,10 @@ func (s *TestablePaymentService) GetPaymentCreatedAt(string) (int64, error) {
 func (s *TestablePaymentService) CheckIfTxHashAlreadyUsed(string) (string, error) {
 	return "", errors.New("not implemented in test")
 }
-func (s *TestablePaymentService) FindActivePaymentByAddress(uint32, string, string, string) (string, error) {
+func (s *TestablePaymentService) FindActivePaymentByAddress(uint64, string, string, string) (string, error) {
 	return "", errors.New("not implemented in test")
 }
-func (s *TestablePaymentService) GetActivePaymentsByUserAndCurrency(uint32, string, string) (json.RawMessage, error) {
+func (s *TestablePaymentService) GetActivePaymentsByUserAndCurrency(uint64, string, string) (json.RawMessage, error) {
 	return nil, errors.New("not implemented in test")
 }
 func (s *TestablePaymentService) UpdatePaymentExpiration(string, int64) error {
@@ -108,6 +109,14 @@ func createTestWeb() (*Web, *MockDB, *MockBybitClient) {
 	db := new(MockDB)
 	client := new(MockBybitClient)
 	app := fiber.New()
+	app.Use(func(c *fiber.Ctx) error {
+		if raw := c.Query("uid"); raw != "" {
+			if uid, err := strconv.ParseUint(raw, 10, 32); err == nil {
+				c.Locals(userIDLocalsKey, uint64(uid))
+			}
+		}
+		return c.Next()
+	})
 	w := &Web{App: app, db: db, paymentService: &TestablePaymentService{client: client}}
 	app.Get("/currencies", w.GetSupportedCurrencies)
 	return w, db, client

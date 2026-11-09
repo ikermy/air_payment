@@ -10,19 +10,19 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ikermy/air-common/pkg/com"
-	"github.com/ikermy/air-common/pkg/mode"
+	"github.com/ikermy/air-common/v2/pkg/com"
+	"github.com/ikermy/air-common/v2/pkg/mode"
 	"github.com/ikermy/air-logger/v2/pkg/logger"
 )
 
 type DB interface {
 	// GetUserTariff Реализация в comdb.Exterior
-	GetUserTariff(ctx context.Context, userId uint32) (json.RawMessage, error)
+	GetUserTariff(ctx context.Context, userId uint64) (json.RawMessage, error)
 
 	// Методы для установки платеже при его поступлении
-	SetBillingData(ctx context.Context, userId uint32, payment float64, months uint8, discount float64) error
+	SetBillingData(ctx context.Context, userId uint64, payment float64, months uint8, discount float64) error
 
-	SaveCryptoPaymentRequest(ctx context.Context, orderID string, userID uint32, currency, network string, amount, amountUSD float64, depositAddress, depositTag string, expiresAt int64) error
+	SaveCryptoPaymentRequest(ctx context.Context, orderID string, userID uint64, currency, network string, amount, amountUSD float64, depositAddress, depositTag string, expiresAt int64) error
 	GetCryptoPaymentStatus(ctx context.Context, orderID string) (json.RawMessage, error)
 	UpdateCryptoPaymentStatus(ctx context.Context, orderID, status, txHash string, receivedAmount float64, confirmations int) error
 	GetPendingCryptoPayments(ctx context.Context) (json.RawMessage, error)
@@ -32,8 +32,8 @@ type DB interface {
 	CheckIfTxHashAlreadyUsed(ctx context.Context, txHash string) (string, error)        // Новый метод для проверки использования txHash
 
 	// Методы для работы с повторным использованием платежей
-	FindActivePaymentByAddress(ctx context.Context, userID uint32, currency, network, address string) (string, error)         // Возвращает orderID активного платежа
-	GetActivePaymentsByUserAndCurrency(ctx context.Context, userID uint32, currency, network string) (json.RawMessage, error) // Получает все активные платежи пользователя
+	FindActivePaymentByAddress(ctx context.Context, userID uint64, currency, network, address string) (string, error)         // Возвращает orderID активного платежа
+	GetActivePaymentsByUserAndCurrency(ctx context.Context, userID uint64, currency, network string) (json.RawMessage, error) // Получает все активные платежи пользователя
 	UpdatePaymentExpiration(ctx context.Context, orderID string, newExpiresAt int64) error                                    // Продлевает срок действия платежа
 }
 
@@ -99,7 +99,7 @@ func (ps *PaymentService) CalculatePayment(currency, network string, amountUSD f
 }
 
 // CreatePaymentRequest создает запрос на оплату или повторно использует существующий активный платеж
-func (ps *PaymentService) CreatePaymentRequest(userID uint32, currency, network string, amountUSD float64) (*PaymentRequest, *DepositAddress, error) {
+func (ps *PaymentService) CreatePaymentRequest(userID uint64, currency, network string, amountUSD float64) (*PaymentRequest, *DepositAddress, error) {
 	// Получаем актуальный курс валюты через bybit API
 	price, err := ps.bybitClient.GetCurrencyPrice(currency)
 	if err != nil {
@@ -212,7 +212,7 @@ func (ps *PaymentService) CreatePaymentRequest(userID uint32, currency, network 
 }
 
 // sendNotification отправляет уведомление о новом платеже в CarpinteroCh
-func sendNotification(userID uint32, new bool, paymentRequest PaymentRequest) {
+func sendNotification(userID uint64, new bool, paymentRequest PaymentRequest) {
 	paymentRequestJSON, _ := json.Marshal(paymentRequest)
 	msg := com.CarpCh{
 		Event:      "usdt_pay",
@@ -285,12 +285,12 @@ func (ps *PaymentService) CheckIfTxHashAlreadyUsed(txHash string) (string, error
 }
 
 // FindActivePaymentByAddress ищет активный платеж по адресу депозита
-func (ps *PaymentService) FindActivePaymentByAddress(userID uint32, currency, network, address string) (string, error) {
+func (ps *PaymentService) FindActivePaymentByAddress(userID uint64, currency, network, address string) (string, error) {
 	return ps.db.FindActivePaymentByAddress(ps.ctx, userID, currency, network, address)
 }
 
 // GetActivePaymentsByUserAndCurrency получает все активные платежи пользователя по валюте и сети
-func (ps *PaymentService) GetActivePaymentsByUserAndCurrency(userID uint32, currency, network string) (json.RawMessage, error) {
+func (ps *PaymentService) GetActivePaymentsByUserAndCurrency(userID uint64, currency, network string) (json.RawMessage, error) {
 	return ps.db.GetActivePaymentsByUserAndCurrency(ps.ctx, userID, currency, network)
 }
 

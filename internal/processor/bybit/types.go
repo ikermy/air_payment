@@ -46,7 +46,7 @@ func (mt MySQLDateTime) MarshalJSON() ([]byte, error) {
 
 // PaymentRequest запрос на оплату
 type PaymentRequest struct {
-	UserID    uint32  `json:"userId"`
+	UserID uint64  `json:"userId"`
 	Currency  string  `json:"currency"`
 	Amount    float64 `json:"amount"`
 	AmountUSD float64 `json:"amountUsd"`
@@ -67,7 +67,7 @@ type DepositAddress struct {
 // PaymentStatus статус платежа
 type PaymentStatus struct {
 	OrderID        string        `json:"orderId"`
-	UserID         uint32        `json:"userId"`
+	UserID uint64        `json:"userId"`
 	Status         string        `json:"status"` // pending, confirmed, failed, expired
 	Currency       string        `json:"currency"`
 	Network        string        `json:"network"`

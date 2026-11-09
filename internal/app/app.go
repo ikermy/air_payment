@@ -7,8 +7,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/ikermy/air-common/pkg/com"
-	"github.com/ikermy/air-common/pkg/endpoint"
+	"github.com/ikermy/air-common/v2/pkg/com"
+	"github.com/ikermy/air-common/v2/pkg/endpoint"
 	"github.com/ikermy/air-logger/v2/pkg/logger"
 )
 

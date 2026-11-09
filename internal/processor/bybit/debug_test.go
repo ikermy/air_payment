@@ -1,8 +1,11 @@
+//go:build integration
+
 package bybit
 
 import (
 	"testing"
 
+	"github.com/hirokisan/bybit/v2"
 	"github.com/ikermy/air-logger/v2/pkg/logger"
 )
 

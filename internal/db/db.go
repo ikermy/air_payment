@@ -6,7 +6,7 @@ import (
 	repoMysql "air_payment/internal/repository/mysql"
 	"context"
 
-	"github.com/ikermy/air-common/pkg/comdb"
+	"github.com/ikermy/air-common/v2/pkg/comdb"
 	"github.com/ikermy/air-logger/v2/pkg/logger"
 
 	_ "github.com/go-sql-driver/mysql"

@@ -30,7 +30,7 @@ type MockDB struct {
 	mock.Mock
 }
 
-func (m *MockDB) GetActivePaymentsByUserAndCurrency(_ context.Context, userID uint32, currency string, network string) (json.RawMessage, error) {
+func (m *MockDB) GetActivePaymentsByUserAndCurrency(_ context.Context, userID uint64, currency string, network string) (json.RawMessage, error) {
 	args := m.Called(userID, currency, network)
 	return args.Get(0).(json.RawMessage), args.Error(1)
 }
@@ -40,7 +40,7 @@ func (m *MockDB) UpdatePaymentExpiration(_ context.Context, orderID string, newE
 	return args.Error(0)
 }
 
-func (m *MockDB) SaveCryptoPaymentRequest(_ context.Context, orderID string, userID uint32, currency, network string, amount, amountUSD float64, depositAddress, depositTag string, expiresAt int64) error {
+func (m *MockDB) SaveCryptoPaymentRequest(_ context.Context, orderID string, userID uint64, currency, network string, amount, amountUSD float64, depositAddress, depositTag string, expiresAt int64) error {
 	args := m.Called(orderID, userID, currency, network, amount, amountUSD, depositAddress, depositTag, expiresAt)
 	return args.Error(0)
 }
@@ -80,17 +80,17 @@ func (m *MockDB) CheckIfTxHashAlreadyUsed(_ context.Context, txHash string) (str
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockDB) GetUserTariff(_ context.Context, userId uint32) (json.RawMessage, error) {
+func (m *MockDB) GetUserTariff(_ context.Context, userId uint64) (json.RawMessage, error) {
 	args := m.Called(userId)
 	return args.Get(0).(json.RawMessage), args.Error(1)
 }
 
-func (m *MockDB) SetBillingData(_ context.Context, userId uint32, payment float64, months uint8, discount float64) error {
+func (m *MockDB) SetBillingData(_ context.Context, userId uint64, payment float64, months uint8, discount float64) error {
 	args := m.Called(userId, payment, months, discount)
 	return args.Error(0)
 }
 
-func (m *MockDB) FindActivePaymentByAddress(_ context.Context, userID uint32, currency string, network string, address string) (string, error) {
+func (m *MockDB) FindActivePaymentByAddress(_ context.Context, userID uint64, currency string, network string, address string) (string, error) {
 	args := m.Called(userID, currency, network, address)
 	return args.String(0), args.Error(1)
 }
@@ -132,7 +132,7 @@ func (ps *TestPaymentService) generateOrderID() string {
 }
 
 // CreatePaymentRequest создает запрос на оплату (тестовая версия)
-func (ps *TestPaymentService) CreatePaymentRequest(userID uint32, currency, network string, amountUSD float64) (*PaymentRequest, *DepositAddress, error) {
+func (ps *TestPaymentService) CreatePaymentRequest(userID uint64, currency, network string, amountUSD float64) (*PaymentRequest, *DepositAddress, error) {
 	// Генерируем уникальный orderID
 	orderID := ps.generateOrderID()
 
@@ -184,7 +184,7 @@ func TestCreatePaymentRequest_Success(t *testing.T) {
 		db:     mockDB,
 	}
 
-	userID := uint32(123)
+	userID := uint64(123)
 	currency := "BTC"
 	network := "BTC"
 	amountUSD := 100.0
@@ -248,7 +248,7 @@ func TestCreatePaymentRequest_GetCurrencyPriceError(t *testing.T) {
 		db:     mockDB,
 	}
 
-	userID := uint32(123)
+	userID := uint64(123)
 	currency := "BTC"
 	network := "BTC"
 	amountUSD := 100.0
@@ -282,7 +282,7 @@ func TestCreatePaymentRequest_GetDepositAddressError(t *testing.T) {
 		db:     mockDB,
 	}
 
-	userID := uint32(123)
+	userID := uint64(123)
 	currency := "BTC"
 	network := "BTC"
 	amountUSD := 100.0
@@ -318,7 +318,7 @@ func TestCreatePaymentRequest_SaveToDBError(t *testing.T) {
 		db:     mockDB,
 	}
 
-	userID := uint32(123)
+	userID := uint64(123)
 	currency := "BTC"
 	network := "BTC"
 	amountUSD := 100.0
@@ -405,7 +405,7 @@ func TestCreatePaymentRequest_CorrectAmountCalculation(t *testing.T) {
 				db:     mockDB,
 			}
 
-			userID := uint32(123)
+			userID := uint64(123)
 			network := "BTC"
 
 			expectedDepositAddress := &DepositAddress{
@@ -467,7 +467,7 @@ func TestCreatePaymentRequest_ExpirationTime(t *testing.T) {
 		db:     mockDB,
 	}
 
-	userID := uint32(123)
+	userID := uint64(123)
 	currency := "BTC"
 	network := "BTC"
 	amountUSD := 100.0

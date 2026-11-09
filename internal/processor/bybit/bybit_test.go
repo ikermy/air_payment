@@ -1,3 +1,5 @@
+//go:build integration
+
 package bybit
 
 import (
@@ -1104,7 +1106,7 @@ func TestCreatePaymentRequest_Integration(t *testing.T) {
 	mockDB := new(MockDB)
 	mockDB.On("SaveCryptoPaymentRequest",
 		mock.AnythingOfType("string"),  // orderID
-		mock.AnythingOfType("uint32"),  // userID
+		mock.AnythingOfType("uint64"),  // userID
 		mock.AnythingOfType("string"),  // currency
 		mock.AnythingOfType("string"),  // network
 		mock.AnythingOfType("float64"), // amount
@@ -1118,7 +1120,7 @@ func TestCreatePaymentRequest_Integration(t *testing.T) {
 	service := NewPaymentService(context.Background(), cfg, mockDB)
 
 	// Тестовые данные
-	userID := uint32(12345)
+	userID := uint64(12345)
 	currency := "USDT" // Используем USDT как самую стабильную валюту для теста
 	network := "TRX"   // USDT на TRON сети часто поддерживается
 	amountUSD := 10.0  // Небольшая сумма для теста
@@ -1197,7 +1199,7 @@ func TestCreatePaymentRequest_Integration_BTC(t *testing.T) {
 	mockDB := new(MockDB)
 	mockDB.On("SaveCryptoPaymentRequest",
 		mock.AnythingOfType("string"),  // orderID
-		mock.AnythingOfType("uint32"),  // userID
+		mock.AnythingOfType("uint64"),  // userID
 		mock.AnythingOfType("string"),  // currency
 		mock.AnythingOfType("string"),  // network
 		mock.AnythingOfType("float64"), // amount
@@ -1211,7 +1213,7 @@ func TestCreatePaymentRequest_Integration_BTC(t *testing.T) {
 	service := NewPaymentService(context.Background(), cfg, mockDB)
 
 	// Тестовые данные
-	userID := uint32(12345)
+	userID := uint64(12345)
 	currency := "BTC"
 	network := "BTC"
 	amountUSD := 50.0 // Больше сумма для BTC
@@ -1264,7 +1266,7 @@ func TestCreatePaymentRequest_Integration_ErrorHandling(t *testing.T) {
 
 	// Тестируем с неподдерживаемой валютой
 	t.Run("UnsupportedCurrency", func(t *testing.T) {
-		userID := uint32(12345)
+		userID := uint64(12345)
 		currency := "INVALID_CURRENCY"
 		network := "INVALID_NETWORK"
 		amountUSD := 10.0
@@ -1281,7 +1283,7 @@ func TestCreatePaymentRequest_Integration_ErrorHandling(t *testing.T) {
 
 	// Тестируем с неподдерживаемой сетью
 	t.Run("UnsupportedNetwork", func(t *testing.T) {
-		userID := uint32(12345)
+		userID := uint64(12345)
 		currency := "BTC"
 		network := "INVALID_NETWORK"
 		amountUSD := 10.0

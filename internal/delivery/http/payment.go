@@ -19,7 +19,7 @@ func (w *Web) CreateBybitPayment(c *fiber.Ctx) error {
 	startedAt := time.Now()
 	defer func() { metrics.ObservePaymentDuration("create_payment", time.Since(startedAt).Seconds()) }()
 	var req struct {
-		UserID   uint32  `json:"user_id"`
+		UserID uint64  `json:"user_id"`
 		Currency string  `json:"currency"`
 		Network  string  `json:"network"`
 		Amount   float64 `json:"amount"`
@@ -172,7 +172,7 @@ func (w *Web) GetPaymentStatus(c *fiber.Ctx) error {
 	}
 
 	paymentUserID, ok := status["userId"].(float64)
-	if !ok || uint32(paymentUserID) != userID {
+	if !ok || uint64(paymentUserID) != userID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "access denied"})
 	}
 

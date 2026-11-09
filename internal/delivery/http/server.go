@@ -17,14 +17,14 @@ import (
 )
 
 type DB interface {
-	GetUserTariff(ctx context.Context, userID uint32) (json.RawMessage, error)
+	GetUserTariff(ctx context.Context, userID uint64) (json.RawMessage, error)
 }
 
 // PaymentServiceInterface интерфейс для сервиса платежей
 type PaymentServiceInterface interface {
 	GetSupportedCurrencies() ([]bybit2.SupportedCurrency, error)
 	CalculatePayment(currency, network string, amountUSD float64) (*bybit2.PaymentCalculation, error)
-	CreatePaymentRequest(userID uint32, currency, network string, amountUSD float64) (*bybit2.PaymentRequest, *bybit2.DepositAddress, error)
+	CreatePaymentRequest(userID uint64, currency, network string, amountUSD float64) (*bybit2.PaymentRequest, *bybit2.DepositAddress, error)
 	GetPaymentStatus(orderID string) (json.RawMessage, error)
 	UpdatePaymentStatus(orderID, status, txHash string, receivedAmount float64, confirmations int) error
 	GetPendingPayments() (json.RawMessage, error)
@@ -34,8 +34,8 @@ type PaymentServiceInterface interface {
 	CheckIfTxHashAlreadyUsed(txHash string) (string, error)
 
 	// Методы для работы с повторным использованием платежей
-	FindActivePaymentByAddress(userID uint32, currency, network, address string) (string, error)
-	GetActivePaymentsByUserAndCurrency(userID uint32, currency, network string) (json.RawMessage, error)
+	FindActivePaymentByAddress(userID uint64, currency, network, address string) (string, error)
+	GetActivePaymentsByUserAndCurrency(userID uint64, currency, network string) (json.RawMessage, error)
 	UpdatePaymentExpiration(orderID string, newExpiresAt int64) error
 
 	// Методы для доступа к bybit API

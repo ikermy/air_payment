@@ -9,7 +9,7 @@ import (
 func (w *Web) GetSupportedCurrencies(c *fiber.Ctx) error {
 	userID, ok := getUserID(c)
 	if !ok {
-		return nil
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "uid is required"})
 	}
 
 	currencies, err := w.paymentService.GetSupportedCurrencies()
@@ -67,7 +67,7 @@ func (w *Web) GetDonationAddress(c *fiber.Ctx) error {
 // CalculatePayment выполняет предварительный расчет платежа
 func (w *Web) CalculatePayment(c *fiber.Ctx) error {
 	var req struct {
-		UserId   uint32  `json:"user_id"`
+		UserId uint64  `json:"user_id"`
 		Currency string  `json:"currency"`
 		Network  string  `json:"network"`
 		Amount   float64 `json:"amount"`

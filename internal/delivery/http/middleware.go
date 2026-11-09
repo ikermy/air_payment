@@ -20,11 +20,11 @@ func userIDMiddleware(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid uid"})
 	}
 
-	c.Locals(userIDLocalsKey, uint32(uid))
+	c.Locals(userIDLocalsKey, uint64(uid))
 	return c.Next()
 }
 
-func getUserID(c *fiber.Ctx) (uint32, bool) {
-	userID, ok := c.Locals(userIDLocalsKey).(uint32)
+func getUserID(c *fiber.Ctx) (uint64, bool) {
+	userID, ok := c.Locals(userIDLocalsKey).(uint64)
 	return userID, ok
 }
