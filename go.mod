@@ -7,7 +7,7 @@ require (
 	github.com/gofiber/fiber/v2 v2.52.15
 	github.com/hirokisan/bybit/v2 v2.39.0
 	github.com/ikermy/air-common/v2 v2.0.4
-	github.com/ikermy/air-logger/v2 v2.1.4
+	github.com/ikermy/air-logger/v2 v2.1.5
 	github.com/prometheus/client_golang v1.24.1
 	github.com/stretchr/testify v1.12.1
 )
